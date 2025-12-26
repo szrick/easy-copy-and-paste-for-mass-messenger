@@ -76,7 +76,7 @@ function showError(message) {
  * Parse CSV data
  */
 function parseCSV(text) {
-    const lines = text.split('\n').filter(line => line.trim());
+    const lines = text.split('\n');
     const result = [];
 
     for (let i = 0; i < lines.length; i++) {
@@ -107,6 +107,93 @@ function parseCSV(text) {
     }
 
     return result;
+}
+
+/**
+ * Convert English date to Chinese format
+ * Example: "JANUARY 5-11" → "1月5-11日"
+ */
+function convertDateToChinese(dateStr) {
+    if (!dateStr) return '';
+
+    const monthMap = {
+        'JANUARY': '1月',
+        'FEBRUARY': '2月',
+        'MARCH': '3月',
+        'APRIL': '4月',
+        'MAY': '5月',
+        'JUNE': '6月',
+        'JULY': '7月',
+        'AUGUST': '8月',
+        'SEPTEMBER': '9月',
+        'OCTOBER': '10月',
+        'NOVEMBER': '11月',
+        'DECEMBER': '12月'
+    };
+
+    // Handle formats like "JANUARY 5-11" or "JANUARY 26–FEBRUARY 1"
+    const parts = dateStr.trim().split(/\s+/);
+
+    if (parts.length >= 2) {
+        const month = parts[0].toUpperCase();
+        const days = parts[1];
+
+        // Check if it crosses months (e.g., "JANUARY 26–FEBRUARY 1")
+        if (parts.length >= 4 && parts[2].toUpperCase() in monthMap) {
+            const month1 = monthMap[month] || month;
+            const day1 = days.replace(/–/g, '-').split('-')[0];
+            const month2 = monthMap[parts[2].toUpperCase()] || parts[2];
+            const day2 = parts[3];
+            return `${month1}${day1}日-${month2}${day2}日`;
+        } else {
+            const chineseMonth = monthMap[month] || month;
+            const cleanDays = days.replace(/–/g, '-');
+            return `${chineseMonth}${cleanDays}日`;
+        }
+    }
+
+    return dateStr;
+}
+
+/**
+ * Parse assignment entry
+ * Examples: "3 HXQ", "4 Hexiaofan / Lingke", "6 LX"
+ * Returns: { partNumber, isBrother, student, assistant }
+ */
+function parseAssignment(entry) {
+    if (!entry || !entry.trim()) {
+        return null;
+    }
+
+    const text = entry.trim();
+
+    // Match pattern: number followed by space and names
+    const match = text.match(/^(\d+)\s+(.+)$/);
+
+    if (!match) {
+        return null;
+    }
+
+    const partNumber = match[1];
+    const namesPart = match[2].trim();
+
+    // Check if it contains "/" for sister assignment
+    if (namesPart.includes('/')) {
+        const names = namesPart.split('/').map(n => n.trim());
+        return {
+            partNumber,
+            isBrother: false,
+            student: names[0] || '',
+            assistant: names[1] || ''
+        };
+    } else {
+        return {
+            partNumber,
+            isBrother: true,
+            student: namesPart,
+            assistant: null
+        };
+    }
 }
 
 /**
@@ -156,36 +243,50 @@ async function loadAssignments() {
 
 /**
  * Process assignments from CSV data
+ * First row contains dates for each week (column)
+ * Each column represents one week with multiple assignments
  */
 function processAssignments(data) {
-    const headers = data[0].map(h => h.toLowerCase().trim());
     assignments = [];
 
-    // Find column indices
-    const nameCol = findColumnIndex(headers, ['name', 'brother', 'sister', 'participant', 'student']);
-    const partCol = findColumnIndex(headers, ['part', 'assignment', 'talk', 'item']);
-    const dateCol = findColumnIndex(headers, ['date', 'week', 'meeting date']);
-    const timeCol = findColumnIndex(headers, ['time']);
-    const detailsCol = findColumnIndex(headers, ['details', 'notes', 'description']);
+    if (data.length === 0) {
+        return;
+    }
 
-    // Process each row (skip header)
-    for (let i = 1; i < data.length; i++) {
-        const row = data[i];
+    // First row contains dates
+    const dateRow = data[0];
+    const numWeeks = dateRow.length;
 
-        if (row.length === 0 || !row[nameCol]) {
+    // Process each column (week)
+    for (let col = 0; col < numWeeks; col++) {
+        const weekDate = dateRow[col];
+        const chineseDate = convertDateToChinese(weekDate);
+
+        // Skip if no date
+        if (!weekDate || !weekDate.trim()) {
             continue;
         }
 
-        const assignment = {
-            name: row[nameCol] || '',
-            part: row[partCol] || '',
-            date: row[dateCol] || '',
-            time: row[timeCol] || '',
-            details: row[detailsCol] || ''
-        };
+        // Process each row in this column (starting from row 1)
+        for (let row = 1; row < data.length; row++) {
+            const cellValue = data[row][col];
 
-        if (assignment.name && assignment.part) {
-            assignments.push(assignment);
+            if (!cellValue || !cellValue.trim()) {
+                continue;
+            }
+
+            const parsed = parseAssignment(cellValue);
+
+            if (parsed) {
+                assignments.push({
+                    date: weekDate,
+                    chineseDate: chineseDate,
+                    partNumber: parsed.partNumber,
+                    isBrother: parsed.isBrother,
+                    student: parsed.student,
+                    assistant: parsed.assistant
+                });
+            }
         }
     }
 
@@ -193,42 +294,45 @@ function processAssignments(data) {
 }
 
 /**
- * Find column index by multiple possible names
+ * Generate message template based on assignment type
  */
-function findColumnIndex(headers, possibleNames) {
-    for (const name of possibleNames) {
-        const index = headers.findIndex(h => h.includes(name));
-        if (index !== -1) {
-            return index;
-        }
+function generateMessage(assignment) {
+    if (assignment.isBrother) {
+        // Brother template
+        return `你好👋 ${assignment.student}🧔‍♂️
+你有一个新🆕练习🎉🎉
+
+📅：${assignment.chineseDate}
+#️⃣：${assignment.partNumber}
+
+请尽快准备，期待🙏
+RH`;
+    } else {
+        // Sister template
+        return `你好👋 ${assignment.student}🧔‍♀️
+你有一个新🆕练习🎉🎉
+
+📅：${assignment.chineseDate}
+#️⃣：${assignment.partNumber}
+助：${assignment.assistant}
+
+请尽快准备，期待🙏
+RH`;
     }
-    return 0;
 }
 
 /**
- * Generate message template
+ * Get display title for message card
  */
-function generateMessage(assignment) {
-    let message = `Dear ${assignment.name},\n\n`;
-    message += `You have been assigned the following part for the JW meeting:\n\n`;
+function getDisplayTitle(assignment) {
+    const type = assignment.isBrother ? '🧔‍♂️ Brother' : '🧔‍♀️ Sister';
+    const partInfo = `Part ${assignment.partNumber}`;
 
-    if (assignment.date) {
-        message += `📅 Date: ${assignment.date}\n`;
+    if (assignment.isBrother) {
+        return `${type} - ${partInfo} - ${assignment.student}`;
+    } else {
+        return `${type} - ${partInfo} - ${assignment.student} / ${assignment.assistant}`;
     }
-
-    if (assignment.time) {
-        message += `🕐 Time: ${assignment.time}\n`;
-    }
-
-    message += `📝 Part: ${assignment.part}\n`;
-
-    if (assignment.details) {
-        message += `\nDetails: ${assignment.details}\n`;
-    }
-
-    message += `\nPlease confirm your availability. Thank you!`;
-
-    return message;
 }
 
 /**
@@ -262,7 +366,7 @@ function createMessageCard(assignment, message, index) {
 
     const title = document.createElement('div');
     title.className = 'message-title';
-    title.textContent = `${assignment.name} - ${assignment.part}`;
+    title.textContent = getDisplayTitle(assignment);
 
     const icon = document.createElement('div');
     icon.className = 'copy-icon';
@@ -340,7 +444,7 @@ function fallbackCopyTextToClipboard(text, card) {
 function showCopyNotification() {
     const notification = document.createElement('div');
     notification.className = 'copy-indicator';
-    notification.textContent = '✓ Copied to clipboard!';
+    notification.textContent = '✓ 已复制！(Copied!)';
     document.body.appendChild(notification);
 
     setTimeout(() => {
