@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JW Meeting Part Assignment - Zangi Messenger Helper</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 JW Meeting Part Assignment</h1>
+            <p>Easy Copy & Paste for Zangi Messenger</p>
+        </header>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label for="sheetUrl">Google Sheet URL:</label>
+                <input
+                    type="text"
+                    id="sheetUrl"
+                    placeholder="Paste your Google Sheet URL here..."
+                    aria-label="Google Sheet URL"
+                >
+                <button id="loadBtn" class="btn-primary">Load Assignments</button>
+            </div>
+            <div class="help-text">
+                <p><strong>How to use:</strong></p>
+                <ol>
+                    <li>Make sure your Google Sheet is publicly accessible (Anyone with the link can view)</li>
+                    <li>Paste the Google Sheet URL above</li>
+                    <li>Click "Load Assignments" to fetch the data</li>
+                    <li>Click any message to copy it to clipboard</li>
+                    <li>Paste in Zangi messenger and send!</li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading assignments...</p>
+        </div>
+
+        <div id="errorMessage" class="error hidden"></div>
+
+        <div id="messagesContainer" class="messages-container hidden">
+            <h2>📨 Generated Messages</h2>
+            <div id="messagesList"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
