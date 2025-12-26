@@ -150,14 +150,59 @@ All styles are in `styles.css`. You can modify colors, fonts, and layout by edit
 ### Option 1: Open Locally
 Simply double-click `index.html` to open in your browser.
 
-### Option 2: Host on GitHub Pages
-1. Push this repository to GitHub
-2. Go to Settings > Pages
-3. Select your branch and save
-4. Access via: `https://yourusername.github.io/repository-name`
+### Option 2: Host on GitHub Pages (Recommended)
+
+This repository includes a GitHub Actions workflow that automatically deploys your site to GitHub Pages.
+
+#### Setup Steps:
+
+1. **Push to GitHub:**
+   ```bash
+   git push origin main
+   ```
+
+2. **Enable GitHub Pages:**
+   - Go to your repository on GitHub
+   - Click **Settings** (top navigation)
+   - Click **Pages** (left sidebar)
+   - Under "Build and deployment":
+     - **Source**: Select "GitHub Actions"
+   - Save the settings
+
+3. **Automatic Deployment:**
+   - The GitHub Actions workflow (`.github/workflows/deploy.yml`) will automatically run
+   - Every push to `main` or `master` branch will trigger a new deployment
+   - You can also manually trigger deployment from the "Actions" tab
+
+4. **Access Your Site:**
+   - After deployment completes (usually 1-2 minutes)
+   - Your site will be available at: `https://yourusername.github.io/repository-name`
+   - Example: `https://szrick.github.io/easy-copy-and-paste-for-mass-messenger`
+
+#### Manual Deployment (Alternative):
+
+If you prefer not to use GitHub Actions:
+
+1. Go to Settings > Pages
+2. Under "Source", select "Deploy from a branch"
+3. Select your branch (main/master) and folder (root)
+4. Click Save
+5. Access via: `https://yourusername.github.io/repository-name`
+
+#### Benefits of GitHub Actions Deployment:
+
+- ✅ Automatic deployment on every push
+- ✅ Consistent build process
+- ✅ Can be triggered manually when needed
+- ✅ View deployment history in Actions tab
+- ✅ No additional configuration needed
 
 ### Option 3: Host Anywhere
-Upload the three files (`index.html`, `styles.css`, `script.js`) to any web hosting service.
+Upload the files (`index.html`, `styles.css`, `script.js`) to any web hosting service like:
+- Netlify (drag and drop)
+- Vercel (automatic from GitHub)
+- Firebase Hosting
+- Any static hosting provider
 
 ## License
 
