@@ -112,6 +112,7 @@ function parseCSV(text) {
 /**
  * Convert English date to Chinese format
  * Example: "JANUARY 5-11" → "1月5-11日"
+ * Example: "JANUARY 26-FEBRUARY 1" → "1月26-2月1日"
  */
 function convertDateToChinese(dateStr) {
     if (!dateStr) return '';
@@ -131,25 +132,34 @@ function convertDateToChinese(dateStr) {
         'DECEMBER': '12月'
     };
 
-    // Handle formats like "JANUARY 5-11" or "JANUARY 26–FEBRUARY 1"
-    const parts = dateStr.trim().split(/\s+/);
+    // Normalize dashes (convert en-dash – to regular dash -)
+    const normalizedStr = dateStr.trim().replace(/–/g, '-');
 
-    if (parts.length >= 2) {
-        const month = parts[0].toUpperCase();
-        const days = parts[1];
+    // Try to match cross-month pattern: "JANUARY 26-FEBRUARY 1"
+    const crossMonthMatch = normalizedStr.match(/^(\w+)\s+(\d+)\s*-\s*(\w+)\s+(\d+)$/i);
+    if (crossMonthMatch) {
+        const month1 = monthMap[crossMonthMatch[1].toUpperCase()] || crossMonthMatch[1];
+        const day1 = crossMonthMatch[2];
+        const month2 = monthMap[crossMonthMatch[3].toUpperCase()] || crossMonthMatch[3];
+        const day2 = crossMonthMatch[4];
+        return `${month1}${day1}-${month2}${day2}日`;
+    }
 
-        // Check if it crosses months (e.g., "JANUARY 26–FEBRUARY 1")
-        if (parts.length >= 4 && parts[2].toUpperCase() in monthMap) {
-            const month1 = monthMap[month] || month;
-            const day1 = days.replace(/–/g, '-').split('-')[0];
-            const month2 = monthMap[parts[2].toUpperCase()] || parts[2];
-            const day2 = parts[3];
-            return `${month1}${day1}日-${month2}${day2}日`;
-        } else {
-            const chineseMonth = monthMap[month] || month;
-            const cleanDays = days.replace(/–/g, '-');
-            return `${chineseMonth}${cleanDays}日`;
-        }
+    // Try to match same-month pattern: "JANUARY 5-11"
+    const sameMonthMatch = normalizedStr.match(/^(\w+)\s+(\d+)-(\d+)$/i);
+    if (sameMonthMatch) {
+        const month = monthMap[sameMonthMatch[1].toUpperCase()] || sameMonthMatch[1];
+        const day1 = sameMonthMatch[2];
+        const day2 = sameMonthMatch[3];
+        return `${month}${day1}-${day2}日`;
+    }
+
+    // Try to match single date: "JANUARY 5"
+    const singleDateMatch = normalizedStr.match(/^(\w+)\s+(\d+)$/i);
+    if (singleDateMatch) {
+        const month = monthMap[singleDateMatch[1].toUpperCase()] || singleDateMatch[1];
+        const day = singleDateMatch[2];
+        return `${month}${day}日`;
     }
 
     return dateStr;
@@ -232,20 +242,45 @@ async function loadAssignments() {
     showLoading();
 
     try {
+        console.log('Fetching URL:', csvUrl);
         const response = await fetch(csvUrl);
+        console.log('Response status:', response.status);
+        console.log('Response OK:', response.ok);
+        console.log('Response headers:', [...response.headers.entries()]);
 
         if (!response.ok) {
-            throw new Error('Unable to fetch data. Please use: 1) Google Apps Script proxy URL, 2) Published CSV URL (File → Publish to web), or 3) Shared sheet URL (Share → Anyone with the link).');
+            throw new Error(`Unable to fetch data (HTTP ${response.status}). Please use: 1) Google Apps Script proxy URL, 2) Published CSV URL (File → Publish to web), or 3) Shared sheet URL (Share → Anyone with the link).`);
         }
 
         const csvText = await response.text();
-        const data = parseCSV(csvText);
 
-        if (data.length < 2) {
-            throw new Error('No data found in the sheet');
+        // Debug logging
+        console.log('Raw CSV response length:', csvText.length);
+        console.log('First 500 characters:', csvText.substring(0, 500));
+
+        // Check if response is an error message from Google Apps Script
+        if (csvText.startsWith('Error:')) {
+            throw new Error(`Google Apps Script error: ${csvText.substring(7)}`);
         }
 
-        processAssignments(data);
+        // Check if response is empty
+        if (!csvText || csvText.trim().length === 0) {
+            throw new Error('Received empty response from Google Apps Script. Please check: 1) Your Google Apps Script is deployed correctly, 2) The SHEET_ID and GID match your sheet, 3) The sheet has data');
+        }
+
+        const data = parseCSV(csvText);
+        console.log('Parsed CSV rows:', data.length);
+        console.log('First row:', data[0]);
+
+        // Filter out completely empty rows
+        const nonEmptyData = data.filter(row => row.some(cell => cell && cell.trim()));
+        console.log('Non-empty rows:', nonEmptyData.length);
+
+        if (nonEmptyData.length < 2) {
+            throw new Error(`No data found in the sheet. Received ${nonEmptyData.length} rows with data. Debug info - Total rows parsed: ${data.length}. Please check: 1) The sheet has data, 2) The SHEET_ID and GID in your Google Apps Script match your sheet. Open browser console (F12) to see raw data.`);
+        }
+
+        processAssignments(nonEmptyData);
         hideLoading();
         messagesContainer.classList.remove('hidden');
 
@@ -291,14 +326,18 @@ function processAssignments(data) {
             const parsed = parseAssignment(cellValue);
 
             if (parsed) {
-                assignments.push({
-                    date: weekDate,
-                    chineseDate: chineseDate,
-                    partNumber: parsed.partNumber,
-                    isBrother: parsed.isBrother,
-                    student: parsed.student,
-                    assistant: parsed.assistant
-                });
+                // Only include parts 3-7 (skip parts 1 and 2)
+                const partNum = parseInt(parsed.partNumber);
+                if (partNum >= 3 && partNum <= 7) {
+                    assignments.push({
+                        date: weekDate,
+                        chineseDate: chineseDate,
+                        partNumber: parsed.partNumber,
+                        isBrother: parsed.isBrother,
+                        student: parsed.student,
+                        assistant: parsed.assistant
+                    });
+                }
             }
         }
     }
@@ -408,16 +447,11 @@ async function copyMessage(card, message) {
     try {
         await navigator.clipboard.writeText(message);
 
-        // Visual feedback on card
+        // Visual feedback on card - keep it permanently
         card.classList.add('copied');
 
         // Show notification
         showCopyNotification();
-
-        // Remove copied class after 2 seconds
-        setTimeout(() => {
-            card.classList.remove('copied');
-        }, 2000);
 
     } catch (error) {
         // Fallback for browsers that don't support clipboard API
@@ -438,12 +472,9 @@ function fallbackCopyTextToClipboard(text, card) {
 
     try {
         document.execCommand('copy');
+        // Keep copied class permanently
         card.classList.add('copied');
         showCopyNotification();
-
-        setTimeout(() => {
-            card.classList.remove('copied');
-        }, 2000);
     } catch (error) {
         showError('Failed to copy message');
     }

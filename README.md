@@ -31,7 +31,92 @@ A simple web application to read JW Meeting Part Assignments from Google Sheets 
 | Mary Johnson | Initial Call | Jan 15, 2025 | 7:45 PM | Topic: Kingdom |
 | David Brown | Return Visit | Jan 22, 2025 | 7:45 PM | Follow-up on brochure |
 
-### Step 2: Make Your Sheet Public
+### Step 2: Choose Your Access Method
+
+You have three options to connect your Google Sheet:
+
+#### Option A: Google Apps Script Proxy (Recommended for Private Sheets)
+
+This allows you to keep your sheet private and still use the app.
+
+1. Go to [Google Apps Script](https://script.google.com/)
+2. Click **New Project**
+3. Delete the default code and paste this:
+
+```javascript
+const SHEET_ID = 'YOUR_SHEET_ID_HERE'; // Replace with your sheet ID
+const GID = '0'; // Replace with your sheet tab ID (usually 0 for first tab)
+
+function doGet(e) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    const sheets = spreadsheet.getSheets();
+    let targetSheet = null;
+
+    for (let sheet of sheets) {
+      if (sheet.getSheetId() == GID) {
+        targetSheet = sheet;
+        break;
+      }
+    }
+
+    if (!targetSheet) {
+      targetSheet = spreadsheet.getSheets()[0];
+    }
+
+    const data = targetSheet.getDataRange().getValues();
+
+    const csv = data.map(row => {
+      return row.map(cell => {
+        const cellStr = String(cell);
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return '"' + cellStr.replace(/"/g, '""') + '"';
+        }
+        return cellStr;
+      }).join(',');
+    }).join('\n');
+
+    return ContentService
+      .createTextOutput(csv)
+      .setMimeType(ContentService.MimeType.TEXT);
+
+  } catch (error) {
+    return ContentService
+      .createTextOutput('Error: ' + error.toString())
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+```
+
+4. **Get your SHEET_ID and GID**:
+   - Open your Google Sheet
+   - Look at the URL: `https://docs.google.com/spreadsheets/d/SHEET_ID/edit#gid=GID`
+   - Copy the SHEET_ID and GID from the URL
+   - Replace them in the script above
+
+5. **Deploy the script**:
+   - Click **Deploy** > **New deployment**
+   - Click the gear icon ⚙️ > Select **Web app**
+   - Fill in:
+     - **Description**: "Sheet CSV Proxy"
+     - **Execute as**: Me
+     - **Who has access**: Anyone
+   - Click **Deploy**
+   - Click **Authorize access** and grant permissions
+   - Copy the **Web app URL** (it will look like `https://script.google.com/macros/s/...`)
+
+6. Use this URL in the application!
+
+#### Option B: Publish to Web (Public CSV)
+
+1. Open your Google Sheet
+2. Click **File** > **Share** > **Publish to web**
+3. In the dropdown, select the sheet tab you want
+4. Change "Web page" to **Comma-separated values (.csv)**
+5. Click **Publish**
+6. Copy the published URL
+
+#### Option C: Share Publicly
 
 1. Open your Google Sheet
 2. Click the **Share** button (top right)

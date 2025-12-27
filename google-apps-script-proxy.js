@@ -51,26 +51,15 @@ function doGet(e) {
       }).join(',');
     }).join('\n');
 
-    // Return CSV with proper headers
+    // Return CSV
+    // Note: Google Apps Script web apps automatically handle CORS when deployed with "Anyone" access
     return ContentService
       .createTextOutput(csv)
-      .setMimeType(ContentService.MimeType.CSV)
-      .setHeader('Access-Control-Allow-Origin', '*')
-      .setHeader('Access-Control-Allow-Methods', 'GET');
+      .setMimeType(ContentService.MimeType.TEXT);
 
   } catch (error) {
     return ContentService
       .createTextOutput('Error: ' + error.toString())
       .setMimeType(ContentService.MimeType.TEXT);
   }
-}
-
-// Handle CORS preflight
-function doOptions(e) {
-  return ContentService
-    .createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader('Access-Control-Allow-Origin', '*')
-    .setHeader('Access-Control-Allow-Methods', 'GET')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
