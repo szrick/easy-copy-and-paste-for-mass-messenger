@@ -240,18 +240,30 @@ async function loadAssignments() {
 
         const csvText = await response.text();
 
+        // Debug logging
+        console.log('Raw CSV response length:', csvText.length);
+        console.log('First 500 characters:', csvText.substring(0, 500));
+
         // Check if response is an error message from Google Apps Script
         if (csvText.startsWith('Error:')) {
             throw new Error(`Google Apps Script error: ${csvText.substring(7)}`);
         }
 
+        // Check if response is empty
+        if (!csvText || csvText.trim().length === 0) {
+            throw new Error('Received empty response from Google Apps Script. Please check: 1) Your Google Apps Script is deployed correctly, 2) The SHEET_ID and GID match your sheet, 3) The sheet has data');
+        }
+
         const data = parseCSV(csvText);
+        console.log('Parsed CSV rows:', data.length);
+        console.log('First row:', data[0]);
 
         // Filter out completely empty rows
         const nonEmptyData = data.filter(row => row.some(cell => cell && cell.trim()));
+        console.log('Non-empty rows:', nonEmptyData.length);
 
         if (nonEmptyData.length < 2) {
-            throw new Error(`No data found in the sheet. Received ${nonEmptyData.length} rows. Please check: 1) The sheet has data, 2) The SHEET_ID and GID in your Google Apps Script match your sheet`);
+            throw new Error(`No data found in the sheet. Received ${nonEmptyData.length} rows with data. Debug info - Total rows parsed: ${data.length}. Please check: 1) The sheet has data, 2) The SHEET_ID and GID in your Google Apps Script match your sheet. Open browser console (F12) to see raw data.`);
         }
 
         processAssignments(nonEmptyData);
