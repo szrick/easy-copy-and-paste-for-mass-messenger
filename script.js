@@ -209,11 +209,16 @@ async function loadAssignments() {
 
     let csvUrl;
 
-    // Check if it's already a published CSV URL
-    if (url.includes('/pub?') && url.includes('output=csv')) {
+    // Check if it's a Google Apps Script URL
+    if (url.includes('script.google.com/macros')) {
         csvUrl = url;
-    } else {
-        // Extract sheet ID and construct CSV export URL
+    }
+    // Check if it's already a published CSV URL
+    else if (url.includes('/pub?') && url.includes('output=csv')) {
+        csvUrl = url;
+    }
+    // Otherwise, extract sheet ID and construct CSV export URL
+    else {
         const sheetId = extractSheetId(url);
         if (!sheetId) {
             showError('Invalid Google Sheet URL. Please check the URL and try again.');
@@ -230,7 +235,7 @@ async function loadAssignments() {
         const response = await fetch(csvUrl);
 
         if (!response.ok) {
-            throw new Error('Unable to fetch data. Make sure the Google Sheet is publicly accessible (Share → Anyone with the link, OR File → Publish to web).');
+            throw new Error('Unable to fetch data. Please use: 1) Google Apps Script proxy URL, 2) Published CSV URL (File → Publish to web), or 3) Shared sheet URL (Share → Anyone with the link).');
         }
 
         const csvText = await response.text();
