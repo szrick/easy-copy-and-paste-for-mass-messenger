@@ -239,13 +239,22 @@ async function loadAssignments() {
         }
 
         const csvText = await response.text();
-        const data = parseCSV(csvText);
 
-        if (data.length < 2) {
-            throw new Error('No data found in the sheet');
+        // Check if response is an error message from Google Apps Script
+        if (csvText.startsWith('Error:')) {
+            throw new Error(`Google Apps Script error: ${csvText.substring(7)}`);
         }
 
-        processAssignments(data);
+        const data = parseCSV(csvText);
+
+        // Filter out completely empty rows
+        const nonEmptyData = data.filter(row => row.some(cell => cell && cell.trim()));
+
+        if (nonEmptyData.length < 2) {
+            throw new Error(`No data found in the sheet. Received ${nonEmptyData.length} rows. Please check: 1) The sheet has data, 2) The SHEET_ID and GID in your Google Apps Script match your sheet`);
+        }
+
+        processAssignments(nonEmptyData);
         hideLoading();
         messagesContainer.classList.remove('hidden');
 
