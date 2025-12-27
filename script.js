@@ -232,10 +232,14 @@ async function loadAssignments() {
     showLoading();
 
     try {
+        console.log('Fetching URL:', csvUrl);
         const response = await fetch(csvUrl);
+        console.log('Response status:', response.status);
+        console.log('Response OK:', response.ok);
+        console.log('Response headers:', [...response.headers.entries()]);
 
         if (!response.ok) {
-            throw new Error('Unable to fetch data. Please use: 1) Google Apps Script proxy URL, 2) Published CSV URL (File → Publish to web), or 3) Shared sheet URL (Share → Anyone with the link).');
+            throw new Error(`Unable to fetch data (HTTP ${response.status}). Please use: 1) Google Apps Script proxy URL, 2) Published CSV URL (File → Publish to web), or 3) Shared sheet URL (Share → Anyone with the link).`);
         }
 
         const csvText = await response.text();
