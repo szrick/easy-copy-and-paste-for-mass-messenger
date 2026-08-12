@@ -15,30 +15,35 @@
 
         <div class="input-section">
             <div class="input-group">
-                <label for="sheetUrl">Google Sheet URL:</label>
+                <label for="sheetUrl">Apps Script URL:</label>
                 <input
                     type="text"
                     id="sheetUrl"
-                    placeholder="Paste your Google Sheet URL here..."
-                    aria-label="Google Sheet URL"
+                    placeholder="Paste your Google Apps Script URL here..."
+                    aria-label="Google Apps Script URL"
                 >
-                <button id="loadBtn" class="btn-primary">Load Assignments</button>
+                <button id="loadWorksheetsBtn" class="btn-secondary">Load Worksheets</button>
+            </div>
+
+            <div id="worksheetSelector" class="input-group hidden">
+                <label for="worksheetSelect">Select Worksheet:</label>
+                <select id="worksheetSelect" class="worksheet-select">
+                    <option value="">-- Select a worksheet --</option>
+                </select>
+                <button id="loadBtn" class="btn-primary">Generate Messages</button>
             </div>
             <div class="help-text">
-                <p><strong>How to use:</strong></p>
+                <p><strong>📱 Mobile-Friendly Instructions:</strong></p>
                 <ol>
-                    <li>Use one of these URL types:
-                        <ul>
-                            <li>Google Apps Script proxy URL (recommended for private sheets)</li>
-                            <li>Published CSV URL (File → Publish to web)</li>
-                            <li>Regular Google Sheets URL (must be shared publicly)</li>
-                        </ul>
-                    </li>
-                    <li>Paste the URL above</li>
-                    <li>Click "Load Assignments" to fetch the data</li>
-                    <li>Click any message to copy it to clipboard</li>
-                    <li>Paste in Zangi messenger and send!</li>
+                    <li><strong>One-time setup:</strong> Deploy Google Apps Script (see instructions above)</li>
+                    <li><strong>Paste</strong> your Apps Script URL</li>
+                    <li><strong>Tap</strong> "Load Worksheets"</li>
+                    <li><strong>Select</strong> the worksheet you want</li>
+                    <li><strong>Tap</strong> "Generate Messages"</li>
+                    <li><strong>Tap</strong> any message card to copy</li>
+                    <li><strong>Switch</strong> to Zangi and paste!</li>
                 </ol>
+                <p><strong>💡 Tip:</strong> Bookmark this page or add to home screen for quick access!</p>
             </div>
         </div>
 
