@@ -108,6 +108,45 @@ header p {
     transform: translateY(0);
 }
 
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+}
+
+.worksheet-select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    transition: border-color 0.3s;
+    margin-bottom: 10px;
+    background: white;
+}
+
+.worksheet-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
 .help-text {
     background: #f8f9fa;
     padding: 15px;

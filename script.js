@@ -1,6 +1,9 @@
 // DOM Elements
 const sheetUrlInput = document.getElementById('sheetUrl');
+const loadWorksheetsBtn = document.getElementById('loadWorksheetsBtn');
 const loadBtn = document.getElementById('loadBtn');
+const worksheetSelector = document.getElementById('worksheetSelector');
+const worksheetSelect = document.getElementById('worksheetSelect');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const errorMessage = document.getElementById('errorMessage');
 const messagesContainer = document.getElementById('messagesContainer');
@@ -8,12 +11,15 @@ const messagesList = document.getElementById('messagesList');
 
 // State
 let assignments = [];
+let baseUrl = '';
+let worksheets = [];
 
 // Event Listeners
+loadWorksheetsBtn.addEventListener('click', loadWorksheetsList);
 loadBtn.addEventListener('click', loadAssignments);
 sheetUrlInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-        loadAssignments();
+        loadWorksheetsList();
     }
 });
 
@@ -207,45 +213,82 @@ function parseAssignment(entry) {
 }
 
 /**
- * Load assignments from Google Sheet
+ * Load worksheets list from Apps Script
  */
-async function loadAssignments() {
+async function loadWorksheetsList() {
     const url = sheetUrlInput.value.trim();
 
     if (!url) {
-        showError('Please enter a Google Sheet URL');
+        showError('Please enter your Google Apps Script URL');
         return;
     }
 
-    let csvUrl;
+    if (!url.includes('script.google.com/macros')) {
+        showError('Please use a Google Apps Script URL (should contain "script.google.com/macros")');
+        return;
+    }
 
-    // Check if it's a Google Apps Script URL
-    if (url.includes('script.google.com/macros')) {
-        csvUrl = url;
-    }
-    // Check if it's already a published CSV URL
-    else if (url.includes('/pub?') && url.includes('output=csv')) {
-        csvUrl = url;
-    }
-    // Otherwise, extract sheet ID and construct CSV export URL
-    else {
-        const sheetId = extractSheetId(url);
-        if (!sheetId) {
-            showError('Invalid Google Sheet URL. Please check the URL and try again.');
-            return;
+    baseUrl = url;
+    showLoading();
+    errorMessage.classList.add('hidden');
+    worksheetSelector.classList.add('hidden');
+    messagesContainer.classList.add('hidden');
+
+    try {
+        const listUrl = `${url}?action=list`;
+        const response = await fetch(listUrl);
+
+        if (!response.ok) {
+            throw new Error('Failed to load worksheets. Make sure the Apps Script is deployed correctly.');
         }
 
-        const gid = extractGid(url);
-        csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+        worksheets = await response.json();
+
+        if (!worksheets || worksheets.length === 0) {
+            throw new Error('No worksheets found in the spreadsheet');
+        }
+
+        // Populate dropdown
+        worksheetSelect.innerHTML = '<option value="">-- Select a worksheet --</option>';
+        worksheets.forEach(sheet => {
+            const option = document.createElement('option');
+            option.value = sheet.name;
+            option.dataset.gid = sheet.gid;
+            option.textContent = sheet.name;
+            worksheetSelect.appendChild(option);
+        });
+
+        worksheetSelector.classList.remove('hidden');
+        hideLoading();
+
+    } catch (error) {
+        showError(error.message || 'Failed to load worksheets. Please try again.');
+    }
+}
+
+/**
+ * Load assignments from selected worksheet
+ */
+async function loadAssignments() {
+    const selectedWorksheet = worksheetSelect.value;
+
+    if (!selectedWorksheet) {
+        showError('Please select a worksheet first');
+        return;
+    }
+
+    if (!baseUrl) {
+        showError('Please load worksheets first');
+        return;
     }
 
     showLoading();
+    messagesContainer.classList.add('hidden');
 
     try {
-        console.log('Fetching URL:', csvUrl);
+        // Construct URL with worksheet parameter
+        const csvUrl = `${baseUrl}?sheet=${encodeURIComponent(selectedWorksheet)}`;
         const response = await fetch(csvUrl);
-        console.log('Response status:', response.status);
-        console.log('Response OK:', response.ok);
         console.log('Response headers:', [...response.headers.entries()]);
 
         if (!response.ok) {
