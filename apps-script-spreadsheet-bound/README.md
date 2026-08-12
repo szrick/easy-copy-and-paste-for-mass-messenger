@@ -19,20 +19,23 @@ This is a **container-bound** Google Apps Script that adds message generation fu
 2. Click **Extensions** → **Apps Script**
 3. You'll see a blank code editor
 
-### Step 2: Add the Code
+### Step 2: Add the Code Files
 
-1. **Delete** any existing code in the editor
-2. Click the **+** button next to "Files"
-3. Choose **"HTML"**
-4. Name it: **Dialog**
-5. Now you should have two files:
-   - `Code.gs`
-   - `Dialog.html`
+1. Click the **+** button next to "Files"
+2. Choose **"Script"**
+3. Name it: **masscode** (it will become `masscode.gs`)
+4. Click the **+** button again
+5. Choose **"HTML"**
+6. Name it: **Dialog**
+7. Now you should have:
+   - `masscode.gs` (new file for JW messages)
+   - `Dialog.html` (new file for UI)
+   - Your existing `Code.gs` (unchanged)
 
 ### Step 3: Paste the Code
 
-**In `Code.gs`:**
-- Copy all content from `Code.gs` in this folder
+**In `masscode.gs`:**
+- Copy all content from `masscode.gs` in this folder
 - Paste into the Apps Script editor
 
 **In `Dialog.html`:**
