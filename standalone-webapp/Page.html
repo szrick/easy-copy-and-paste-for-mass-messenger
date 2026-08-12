@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+  <title>JW Assignment Messages</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-color: #4a90e2;
+      --primary-hover: #357abd;
+      --success-color: #52c41a;
+      --error-color: #f5222d;
+      --background: #f5f7fa;
+      --card-background: #ffffff;
+      --text-primary: #2c3e50;
+      --text-secondary: #7f8c8d;
+      --border-color: #e1e8ed;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 15px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+      padding: 20px;
+      background: var(--card-background);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    header p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    .section {
+      background: var(--card-background);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+
+    select {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: white;
+      transition: border-color 0.3s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+    }
+
+    .spinner {
+      border: 4px solid var(--border-color);
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fff1f0;
+      color: var(--error-color);
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--error-color);
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .success {
+      background: #f6ffed;
+      color: var(--success-color);
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--success-color);
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .messages-container {
+      max-height: 70vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .message-card {
+      background: #f8f9fa;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .message-card:hover,
+    .message-card:active {
+      border-color: var(--primary-color);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .message-card.copied {
+      border-color: var(--success-color);
+      background: #f6ffed;
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .message-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .copy-icon {
+      font-size: 20px;
+      color: var(--text-secondary);
+      margin-left: 10px;
+    }
+
+    .message-card.copied .copy-icon {
+      color: var(--success-color);
+    }
+
+    .message-content {
+      white-space: pre-wrap;
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .copy-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success-color);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-hover);
+      font-weight: 600;
+      animation: slideIn 0.3s ease-out;
+      z-index: 1000;
+      font-size: 15px;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .help-text {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 4px solid var(--primary-color);
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .section {
+        padding: 15px;
+      }
+
+      .message-card {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📋 JW Assignment Messages</h1>
+      <p>Easy Copy & Paste for Zangi Messenger</p>
+    </header>
+
+    <div class="section">
+      <label for="worksheetSelect">📊 Select Worksheet:</label>
+      <select id="worksheetSelect">
+        <option value="">Loading worksheets...</option>
+      </select>
+      <button id="generateBtn" class="btn-primary">📨 Generate Messages</button>
+      <div class="help-text">
+        💡 Select a worksheet and tap "Generate Messages" to create personalized messages for all assignments.
+      </div>
+    </div>
+
+    <div id="loadingIndicator" class="section loading hidden">
+      <div class="spinner"></div>
+      <p>Generating messages...</p>
+    </div>
+
+    <div id="errorMessage" class="error hidden"></div>
+    <div id="successMessage" class="success hidden"></div>
+
+    <div id="messagesContainer" class="section hidden">
+      <label>📨 Generated Messages (Tap to Copy):</label>
+      <div class="messages-container" id="messagesList"></div>
+    </div>
+  </div>
+
+  <script>
+    let worksheets = [];
+    let messages = [];
+
+    // Load worksheets on page load
+    window.addEventListener('load', function() {
+      loadWorksheets();
+    });
+
+    // Load worksheets
+    function loadWorksheets() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            worksheets = result.worksheets;
+            populateWorksheetDropdown();
+          } else {
+            showError(result.error || 'Failed to load worksheets');
+          }
+        })
+        .withFailureHandler(function(error) {
+          showError('Failed to load worksheets: ' + error.message);
+        })
+        .getWorksheets();
+    }
+
+    // Populate worksheet dropdown
+    function populateWorksheetDropdown() {
+      const select = document.getElementById('worksheetSelect');
+      select.innerHTML = '<option value="">-- Select a worksheet --</option>';
+
+      worksheets.forEach(function(sheet) {
+        const option = document.createElement('option');
+        option.value = sheet.name;
+        option.textContent = sheet.name;
+        select.appendChild(option);
+      });
+    }
+
+    // Generate messages button handler
+    document.getElementById('generateBtn').addEventListener('click', function() {
+      const selectedWorksheet = document.getElementById('worksheetSelect').value;
+
+      if (!selectedWorksheet) {
+        showError('Please select a worksheet first');
+        return;
+      }
+
+      showLoading();
+      hideMessages();
+      hideError();
+      hideSuccess();
+
+      google.script.run
+        .withSuccessHandler(handleGenerateSuccess)
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Failed to generate messages: ' + error.message);
+        })
+        .generateMessagesForWorksheet(selectedWorksheet);
+    });
+
+    // Handle successful message generation
+    function handleGenerateSuccess(result) {
+      hideLoading();
+
+      if (!result.success) {
+        showError(result.error || 'Failed to generate messages');
+        return;
+      }
+
+      messages = result.messages;
+
+      if (messages.length === 0) {
+        showError('No assignments found in selected worksheet');
+        return;
+      }
+
+      displayMessages();
+      showSuccess('✓ Generated ' + messages.length + ' message(s)! Tap any card to copy.');
+    }
+
+    // Display messages
+    function displayMessages() {
+      const container = document.getElementById('messagesContainer');
+      const list = document.getElementById('messagesList');
+
+      list.innerHTML = '';
+
+      messages.forEach(function(msg, index) {
+        const card = createMessageCard(msg, index);
+        list.appendChild(card);
+      });
+
+      container.classList.remove('hidden');
+
+      // Smooth scroll to messages
+      setTimeout(function() {
+        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+
+    // Create message card
+    function createMessageCard(msg, index) {
+      const card = document.createElement('div');
+      card.className = 'message-card';
+      card.dataset.index = index;
+
+      const header = document.createElement('div');
+      header.className = 'message-header';
+
+      const title = document.createElement('div');
+      title.className = 'message-title';
+      title.textContent = msg.title;
+
+      const icon = document.createElement('div');
+      icon.className = 'copy-icon';
+      icon.textContent = '📋';
+
+      header.appendChild(title);
+      header.appendChild(icon);
+
+      const content = document.createElement('div');
+      content.className = 'message-content';
+      content.textContent = msg.message;
+
+      card.appendChild(header);
+      card.appendChild(content);
+
+      card.addEventListener('click', function() {
+        copyMessage(msg.message, card);
+      });
+
+      return card;
+    }
+
+    // Copy message to clipboard
+    function copyMessage(text, card) {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(function() {
+            showCopyFeedback(card);
+          })
+          .catch(function() {
+            fallbackCopy(text, card);
+          });
+      } else {
+        fallbackCopy(text, card);
+      }
+    }
+
+    // Fallback copy method
+    function fallbackCopy(text, card) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-999999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        document.execCommand('copy');
+        showCopyFeedback(card);
+      } catch (err) {
+        showError('Failed to copy message');
+      }
+
+      document.body.removeChild(textarea);
+    }
+
+    // Show copy feedback
+    function showCopyFeedback(card) {
+      // Visual feedback on card
+      card.classList.add('copied');
+      setTimeout(function() {
+        card.classList.remove('copied');
+      }, 2000);
+
+      // Show notification
+      const notification = document.createElement('div');
+      notification.className = 'copy-indicator';
+      notification.textContent = '✓ 已复制！(Copied!)';
+      document.body.appendChild(notification);
+
+      setTimeout(function() {
+        document.body.removeChild(notification);
+      }, 2000);
+    }
+
+    // UI Helper Functions
+    function showLoading() {
+      document.getElementById('loadingIndicator').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingIndicator').classList.add('hidden');
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.classList.remove('hidden');
+      setTimeout(function() {
+        errorDiv.classList.add('hidden');
+      }, 5000);
+    }
+
+    function hideError() {
+      document.getElementById('errorMessage').classList.add('hidden');
+    }
+
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.classList.remove('hidden');
+      setTimeout(function() {
+        successDiv.classList.add('hidden');
+      }, 5000);
+    }
+
+    function hideSuccess() {
+      document.getElementById('successMessage').classList.add('hidden');
+    }
+
+    function hideMessages() {
+      document.getElementById('messagesContainer').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
