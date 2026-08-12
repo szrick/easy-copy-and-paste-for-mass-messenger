@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      padding: 15px;
+      background: #f5f7fa;
+    }
+
+    .container {
+      max-width: 100%;
+    }
+
+    .section {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 2px solid #e1e8ed;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4a90e2;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #357abd;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #7f8c8d;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #4a90e2;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fff1f0;
+      color: #f5222d;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 4px solid #f5222d;
+      margin-bottom: 15px;
+    }
+
+    .success {
+      background: #f6ffed;
+      color: #52c41a;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 4px solid #52c41a;
+      margin-bottom: 15px;
+    }
+
+    .messages-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .message-card {
+      background: #f8f9fa;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .message-card:hover {
+      border-color: #4a90e2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .message-card.copied {
+      border-color: #52c41a;
+      background: #f6ffed;
+    }
+
+    .message-title {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .message-content {
+      white-space: pre-wrap;
+      color: #2c3e50;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .copy-indicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #52c41a;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-weight: 600;
+      animation: slideIn 0.3s ease-out;
+      z-index: 1000;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(300px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="section">
+      <label for="worksheetSelect">📊 Select Worksheet:</label>
+      <select id="worksheetSelect">
+        <option value="">Loading worksheets...</option>
+      </select>
+      <button id="generateBtn" class="btn-primary">📨 Generate Messages</button>
+      <div class="help-text">
+        💡 Tip: Select a worksheet and tap "Generate Messages"
+      </div>
+    </div>
+
+    <div id="loadingIndicator" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Generating messages...</p>
+    </div>
+
+    <div id="errorMessage" class="error hidden"></div>
+    <div id="successMessage" class="success hidden"></div>
+
+    <div id="messagesContainer" class="section hidden">
+      <label>📋 Generated Messages (Tap to Copy):</label>
+      <div class="messages-container" id="messagesList"></div>
+    </div>
+  </div>
+
+  <script>
+    let worksheets = [];
+    let messages = [];
+
+    // Load worksheets on page load
+    window.onload = function() {
+      loadWorksheets();
+    };
+
+    // Load worksheets list
+    function loadWorksheets() {
+      google.script.run
+        .withSuccessHandler(function(sheets) {
+          worksheets = sheets;
+          populateWorksheetDropdown();
+        })
+        .withFailureHandler(showError)
+        .getWorksheetList();
+    }
+
+    // Populate worksheet dropdown
+    function populateWorksheetDropdown() {
+      const select = document.getElementById('worksheetSelect');
+      select.innerHTML = '<option value="">-- Select a worksheet --</option>';
+
+      worksheets.forEach(sheet => {
+        const option = document.createElement('option');
+        option.value = sheet.name;
+        option.textContent = sheet.name;
+        select.appendChild(option);
+      });
+    }
+
+    // Generate messages button handler
+    document.getElementById('generateBtn').addEventListener('click', function() {
+      const selectedWorksheet = document.getElementById('worksheetSelect').value;
+
+      if (!selectedWorksheet) {
+        showError('Please select a worksheet first');
+        return;
+      }
+
+      showLoading();
+      hideMessages();
+      hideError();
+      hideSuccess();
+
+      google.script.run
+        .withSuccessHandler(handleGenerateSuccess)
+        .withFailureHandler(showError)
+        .generateMessages(selectedWorksheet);
+    });
+
+    // Handle successful message generation
+    function handleGenerateSuccess(result) {
+      hideLoading();
+
+      if (!result.success) {
+        showError(result.error);
+        return;
+      }
+
+      messages = result.messages;
+
+      if (messages.length === 0) {
+        showError('No assignments found in selected worksheet');
+        return;
+      }
+
+      displayMessages();
+      showSuccess('Generated ' + messages.length + ' message(s) successfully! Tap any message to copy.');
+    }
+
+    // Display messages
+    function displayMessages() {
+      const container = document.getElementById('messagesContainer');
+      const list = document.getElementById('messagesList');
+
+      list.innerHTML = '';
+
+      messages.forEach((msg, index) => {
+        const card = createMessageCard(msg, index);
+        list.appendChild(card);
+      });
+
+      container.classList.remove('hidden');
+    }
+
+    // Create message card
+    function createMessageCard(msg, index) {
+      const card = document.createElement('div');
+      card.className = 'message-card';
+      card.dataset.index = index;
+
+      const title = document.createElement('div');
+      title.className = 'message-title';
+      title.textContent = msg.title;
+
+      const content = document.createElement('div');
+      content.className = 'message-content';
+      content.textContent = msg.message;
+
+      card.appendChild(title);
+      card.appendChild(content);
+
+      card.addEventListener('click', function() {
+        copyMessage(msg.message, card);
+      });
+
+      return card;
+    }
+
+    // Copy message to clipboard
+    function copyMessage(text, card) {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          showCopyFeedback(card);
+        }).catch(function() {
+          fallbackCopy(text, card);
+        });
+      } else {
+        fallbackCopy(text, card);
+      }
+    }
+
+    // Fallback copy method
+    function fallbackCopy(text, card) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-999999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        document.execCommand('copy');
+        showCopyFeedback(card);
+      } catch (err) {
+        showError('Failed to copy message');
+      }
+
+      document.body.removeChild(textarea);
+    }
+
+    // Show copy feedback
+    function showCopyFeedback(card) {
+      // Visual feedback on card
+      card.classList.add('copied');
+      setTimeout(function() {
+        card.classList.remove('copied');
+      }, 2000);
+
+      // Show notification
+      const notification = document.createElement('div');
+      notification.className = 'copy-indicator';
+      notification.textContent = '✓ 已复制！';
+      document.body.appendChild(notification);
+
+      setTimeout(function() {
+        document.body.removeChild(notification);
+      }, 2000);
+    }
+
+    // UI Helper Functions
+    function showLoading() {
+      document.getElementById('loadingIndicator').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingIndicator').classList.add('hidden');
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.classList.remove('hidden');
+    }
+
+    function hideError() {
+      document.getElementById('errorMessage').classList.add('hidden');
+    }
+
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.classList.remove('hidden');
+    }
+
+    function hideSuccess() {
+      document.getElementById('successMessage').classList.add('hidden');
+    }
+
+    function hideMessages() {
+      document.getElementById('messagesContainer').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
