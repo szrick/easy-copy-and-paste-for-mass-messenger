@@ -165,6 +165,7 @@ function processAssignments(data) {
 /**
  * Parse assignment entry
  * FILTER: Only Bible reading (part 3) and Apply Yourself to Field Ministry (parts 4-7)
+ * EXCLUDE: Video assignments (视频)
  */
 function parseAssignment(entry) {
   if (!entry || entry.trim() === '') {
@@ -172,6 +173,12 @@ function parseAssignment(entry) {
   }
 
   const text = entry.trim();
+
+  // FILTER: Exclude video assignments
+  if (text.includes('视频')) {
+    return null; // Skip video assignments
+  }
+
   const match = text.match(/^(\d+)\s+(.+)$/);
 
   if (!match) {
