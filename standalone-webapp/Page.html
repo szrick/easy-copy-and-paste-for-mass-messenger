@@ -14,17 +14,20 @@
     }
 
     :root {
+      /* Dark theme for eye strain reduction and battery saving */
       --primary-color: #4a90e2;
-      --primary-hover: #357abd;
+      --primary-hover: #5ca3f0;
       --success-color: #52c41a;
-      --error-color: #f5222d;
-      --background: #f5f7fa;
-      --card-background: #ffffff;
-      --text-primary: #2c3e50;
-      --text-secondary: #7f8c8d;
-      --border-color: #e1e8ed;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+      --error-color: #ff6b6b;
+      --background: #1a1a1a;
+      --card-background: #2d2d2d;
+      --text-primary: #e8e8e8;
+      --text-secondary: #a0a0a0;
+      --border-color: #404040;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
+      --message-card-bg: #383838;
+      --message-card-copied: #2d4a2d;
     }
 
     body {
@@ -171,7 +174,7 @@
     }
 
     .message-card {
-      background: #f8f9fa;
+      background: var(--message-card-bg);
       border: 2px solid var(--border-color);
       border-radius: 10px;
       padding: 15px;
@@ -191,7 +194,7 @@
 
     .message-card.copied {
       border-color: var(--success-color);
-      background: #f6ffed;
+      background: var(--message-card-copied);
     }
 
     .message-header {
@@ -485,23 +488,22 @@
       document.body.removeChild(textarea);
     }
 
-    // Show copy feedback
+    // Show copy feedback - TOGGLE style (stays until clicked again)
     function showCopyFeedback(card) {
-      // Visual feedback on card
-      card.classList.add('copied');
-      setTimeout(function() {
-        card.classList.remove('copied');
-      }, 2000);
+      // Toggle copied state - stays green until clicked again
+      card.classList.toggle('copied');
 
-      // Show notification
-      const notification = document.createElement('div');
-      notification.className = 'copy-indicator';
-      notification.textContent = '✓ 已复制！(Copied!)';
-      document.body.appendChild(notification);
+      // Show notification only when marking as copied (not when unmarking)
+      if (card.classList.contains('copied')) {
+        const notification = document.createElement('div');
+        notification.className = 'copy-indicator';
+        notification.textContent = '✓ 已复制！(Copied!)';
+        document.body.appendChild(notification);
 
-      setTimeout(function() {
-        document.body.removeChild(notification);
-      }, 2000);
+        setTimeout(function() {
+          document.body.removeChild(notification);
+        }, 2000);
+      }
     }
 
     // UI Helper Functions

@@ -164,6 +164,7 @@ function processAssignments(data) {
 
 /**
  * Parse assignment entry
+ * FILTER: Only Bible reading (part 3) and Apply Yourself to Field Ministry (parts 4-7)
  */
 function parseAssignment(entry) {
   if (!entry || entry.trim() === '') {
@@ -178,6 +179,16 @@ function parseAssignment(entry) {
   }
 
   const partNumber = match[1];
+
+  // FILTER: Only include parts 3, 4, 5, 6, 7
+  // Part 3 = Bible reading (brother)
+  // Parts 4-7 = Apply Yourself to Field Ministry (student parts)
+  // Exclude: Chairman (C), Prayer (P), CBS, and other parts
+  const partNum = parseInt(partNumber);
+  if (partNum < 3 || partNum > 7) {
+    return null; // Skip this part
+  }
+
   const namesPart = match[2].trim();
 
   if (namesPart.includes('/')) {
