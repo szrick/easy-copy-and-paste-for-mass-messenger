@@ -229,23 +229,24 @@ function convertDateToChinese(dateStr) {
     'OCTOBER': '10月', 'NOVEMBER': '11月', 'DECEMBER': '12月'
   };
 
-  const parts = dateStr.trim().split(/\s+/);
+  const text = dateStr.trim();
 
-  if (parts.length >= 2) {
-    const month = parts[0].toUpperCase();
-    const days = parts[1];
+  // Try to match cross-month pattern: "OCTOBER 26-NOVEMBER 2"
+  const crossMonthMatch = text.match(/^([A-Z]+)\s+(\d+)[-–]([A-Z]+)\s+(\d+)$/i);
+  if (crossMonthMatch) {
+    const month1 = monthMap[crossMonthMatch[1].toUpperCase()] || crossMonthMatch[1];
+    const day1 = crossMonthMatch[2];
+    const month2 = monthMap[crossMonthMatch[3].toUpperCase()] || crossMonthMatch[3];
+    const day2 = crossMonthMatch[4];
+    return month1 + day1 + '日-' + month2 + day2 + '日';
+  }
 
-    if (parts.length >= 4 && monthMap[parts[2].toUpperCase()]) {
-      const month1 = monthMap[month] || month;
-      const day1 = days.replace(/–/g, '-').split('-')[0];
-      const month2 = monthMap[parts[2].toUpperCase()] || parts[2];
-      const day2 = parts[3];
-      return month1 + day1 + '日-' + month2 + day2 + '日';
-    } else {
-      const chineseMonth = monthMap[month] || month;
-      const cleanDays = days.replace(/–/g, '-');
-      return chineseMonth + cleanDays + '日';
-    }
+  // Try to match single month pattern: "OCTOBER 26-30" or "OCTOBER 26"
+  const singleMonthMatch = text.match(/^([A-Z]+)\s+(.+)$/i);
+  if (singleMonthMatch) {
+    const month = monthMap[singleMonthMatch[1].toUpperCase()] || singleMonthMatch[1];
+    const days = singleMonthMatch[2].replace(/–/g, '-');
+    return month + days + '日';
   }
 
   return dateStr;
